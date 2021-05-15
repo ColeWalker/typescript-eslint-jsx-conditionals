@@ -1,5 +1,5 @@
 import { RuleTester } from '@typescript-eslint/experimental-utils/dist/ts-eslint/RuleTester'
-import * as rule from './boolean-jsx-conditionals'
+import * as rule from './strict-jsx-conditionals'
 
 const ruleTester = new RuleTester({
   parser: require.resolve('@typescript-eslint/parser'),
