@@ -3,43 +3,66 @@ import {
   ESLintUtils,
   TSESLint,
   TSESTree,
-} from "@typescript-eslint/experimental-utils";
-import * as tsutils from "tsutils";
-import * as ts from "typescript";
+} from '@typescript-eslint/experimental-utils'
+import * as tsutils from 'tsutils'
+import * as ts from 'typescript'
 
 module.exports = {
   meta: {
+    fixable: 'code',
     docs: {
       description:
-        "Ensure variables in JSX conditionals are always cast to booleans, to avoid unwanted side effects with other falsey values like empty strings etc.",
-      category: "Possible Errors",
+        'Ensure variables in JSX conditionals are always cast to booleans, to avoid unwanted side effects with other falsey values like empty strings etc.',
+      category: 'Possible Errors',
       recommended: true,
-      url: "",
+      url: '',
     },
     messages: {
-      someId: "Logical expressions must be cast to booleans",
+      someId: 'Logical expressions must be cast to booleans',
     },
 
     type: null,
     schema: [],
   },
 
-  create(context: TSESLint.RuleContext<"someId", never>) {
-    const parserServices = ESLintUtils.getParserServices(context);
-    const typeChecker = parserServices.program.getTypeChecker();
-
+  create(context: TSESLint.RuleContext<'someId', never>) {
+    const parserServices = ESLintUtils.getParserServices(context)
+    const typeChecker = parserServices.program.getTypeChecker()
+    const sourceCode = context.getSourceCode()
     function isBooleanType(expressionType: ts.Type): boolean {
       return tsutils.isTypeFlagSet(
         expressionType,
         ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral
-      );
+      )
+    }
+    interface MakeFixFunctionParams {
+      token: TSESTree.Token | null
+    }
+
+    type MakeFixFunctionReturnType =
+      | ((fixer: TSESLint.RuleFixer) => TSESLint.RuleFix)
+      | null
+
+    const makeFixFunction = ({
+      token,
+    }: MakeFixFunctionParams): MakeFixFunctionReturnType => {
+      // if removing is the action but last token is not the end of the line
+      if (!token) {
+        return null
+      }
+
+      return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix => {
+        // correct the current delimiter
+        return fixer.insertTextBefore(token, '!!')
+      }
     }
     return {
       JSXExpressionContainer: function (node: TSESTree.JSXExpressionContainer) {
-        const exp = node.expression;
+        const exp = node.expression
+
         if (exp.type === AST_NODE_TYPES.LogicalExpression) {
           if (
-            exp.operator === "&&" &&
+            exp.operator === '&&' &&
             exp.left.type !== AST_NODE_TYPES.UnaryExpression &&
             exp.left.type !== AST_NODE_TYPES.BinaryExpression &&
             !isBooleanType(
@@ -48,13 +71,26 @@ module.exports = {
               )
             )
           ) {
+            const token = sourceCode.getFirstToken(exp.left)
+
             context.report({
               node,
-              messageId: "someId",
-            });
+              loc: {
+                start: {
+                  line: exp.left.loc.start.line,
+                  column: exp.left.loc.start.column,
+                },
+                end: {
+                  line: exp.left.loc.end.line,
+                  column: exp.left.loc.end.column,
+                },
+              },
+              messageId: 'someId',
+              fix: makeFixFunction({ token }),
+            })
           }
         }
       },
-    };
+    }
   },
-};
+}
