@@ -1,0 +1,30 @@
+import { RuleTester } from "@typescript-eslint/experimental-utils/dist/ts-eslint/RuleTester";
+import * as rule from "./boolean-jsx-conditionals";
+
+const ruleTester = new RuleTester({
+  parser: require.resolve("@typescript-eslint/parser"),
+  parserOptions: {
+    ecmaVersion: 2018,
+    tsconfigRootDir: __dirname,
+    ecmaFeatures: { jsx: true },
+    project: "./tsconfig.json",
+  },
+});
+
+ruleTester.run("boolean-jsx-conditionals", rule as any, {
+  valid: [
+    `
+ const Component = ({check}: {check: boolean}) => (<div>{check && <p>Check</p>}</div>)
+    `,
+    `
+ const Component = ({check}: {check: string}) => (<div>{check.length ? <p>Check</p>: <p>Check</p>}</div>)
+    `,
+  ],
+
+  invalid: [
+    {
+      code: `const Component = ({check}: {check: string}) => (<div>{check && <p>Check</p>}</div>)`,
+      errors: [{ messageId: "someId" }],
+    },
+  ],
+});

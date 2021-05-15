@@ -1,0 +1,18 @@
+{
+  "name": "typescript-eslint-jsx-conditional",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^15.3.0",
+    "@types/react": "^17.0.5",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "@typescript-eslint/experimental-utils": "^4.23.0",
+    "@typescript-eslint/parser": "^4.23.0",
+    "eslint": "^7.26.0",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.6",
+    "tsutils": "^3.21.0",
+    "typescript": "^4.2.4"
+  }
+}
