@@ -1,12 +1,11 @@
-import * as ts from "typescript";
-import * as tsutils from "tsutils";
 import {
   AST_NODE_TYPES,
-  TSESTree,
   ESLintUtils,
   TSESLint,
+  TSESTree,
 } from "@typescript-eslint/experimental-utils";
-import { ESLint } from "@typescript-eslint/experimental-utils/dist/ts-eslint";
+import * as tsutils from "tsutils";
+import * as ts from "typescript";
 
 module.exports = {
   meta: {
@@ -25,7 +24,7 @@ module.exports = {
     schema: [],
   },
 
-  create(context: TSESLint.RuleContext<any, any>) {
+  create(context: TSESLint.RuleContext<"someId", never>) {
     const parserServices = ESLintUtils.getParserServices(context);
     const typeChecker = parserServices.program.getTypeChecker();
 
