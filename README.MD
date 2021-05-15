@@ -44,10 +44,12 @@ const Component = ({ check }: { check?: boolean }) => {
 }
 ```
 
+message.length is a number
+
 ```ts
 const HelloWorld = () => {
   const message = 'hello world'
-  // message.length is a number
+
   return <div>{message.length && <p>Check</p>}</div>
 }
 ```
