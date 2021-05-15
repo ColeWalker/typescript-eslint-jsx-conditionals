@@ -7,6 +7,9 @@ import {
 import * as tsutils from 'tsutils'
 import * as ts from 'typescript'
 
+interface Options {
+  preferBoolean?: boolean
+}
 module.exports = {
   meta: {
     fixable: 'code',
@@ -20,12 +23,25 @@ module.exports = {
     messages: {
       someId: 'Logical expressions must be cast to booleans',
     },
-
-    type: null,
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          preferBoolean: {
+            type: 'boolean',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-
-  create(context: TSESLint.RuleContext<'someId', never>) {
+  defaultOptions: [
+    {
+      preferBoolean: false,
+    },
+  ],
+  create(context: TSESLint.RuleContext<'someId', Options[]>) {
+    const options = context?.options?.[0]
     const parserServices = ESLintUtils.getParserServices(context)
     const typeChecker = parserServices.program.getTypeChecker()
     const sourceCode = context.getSourceCode()
@@ -37,6 +53,7 @@ module.exports = {
     }
     interface MakeFixFunctionParams {
       token: TSESTree.Token | null
+      preferBoolean?: boolean
     }
 
     type MakeFixFunctionReturnType =
@@ -45,14 +62,16 @@ module.exports = {
 
     const makeFixFunction = ({
       token,
+      preferBoolean,
     }: MakeFixFunctionParams): MakeFixFunctionReturnType => {
-      // if removing is the action but last token is not the end of the line
       if (!token) {
         return null
       }
 
       return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix => {
-        // correct the current delimiter
+        if (preferBoolean) {
+          return fixer.replaceText(token, `Boolean(${token.value})`)
+        }
         return fixer.insertTextBefore(token, '!!')
       }
     }
@@ -86,7 +105,10 @@ module.exports = {
                 },
               },
               messageId: 'someId',
-              fix: makeFixFunction({ token }),
+              fix: makeFixFunction({
+                token,
+                preferBoolean: options?.preferBoolean,
+              }),
             })
           }
         }

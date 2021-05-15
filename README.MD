@@ -61,3 +61,8 @@ const Component = ({ check }: { check: boolean | string | null }) => {
   return <div>{check && <p>Check</p>}</div>
 }
 ```
+
+## Options
+
+| Name | Type | Default Value | Description |
+| preferBoolean | boolean | false | When using auto-fix, use Boolean() cast instead of !! |
