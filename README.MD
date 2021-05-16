@@ -64,6 +64,7 @@ const Component = ({ check }: { check: boolean | string | null }) => {
 
 ## Options
 
-| Name          | Type    | Default Value | Description                                           |
-| ------------- | ------- | ------------- | ----------------------------------------------------- |
-| preferBoolean | boolean | false         | When using auto-fix, use Boolean() cast instead of !! |
+| Name          | Type    | Default Value | Description                                                   |
+| ------------- | ------- | ------------- | ------------------------------------------------------------- |
+| preferBoolean | boolean | false         | When using auto-fix, use Boolean() cast instead of !!         |
+| normalize     | boolean | false         | ensure that your whole codebase uses the same type of casting |

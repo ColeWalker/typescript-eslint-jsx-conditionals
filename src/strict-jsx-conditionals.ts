@@ -1,5 +1,6 @@
 import {
   AST_NODE_TYPES,
+  AST_TOKEN_TYPES,
   ESLintUtils,
   TSESLint,
   TSESTree,
@@ -9,6 +10,7 @@ import * as ts from 'typescript'
 
 interface Options {
   preferBoolean?: boolean
+  normalize?: boolean
 }
 module.exports = {
   meta: {
@@ -30,6 +32,9 @@ module.exports = {
           preferBoolean: {
             type: 'boolean',
           },
+          normalize: {
+            type: 'boolean',
+          },
         },
         additionalProperties: false,
       },
@@ -38,6 +43,7 @@ module.exports = {
   defaultOptions: [
     {
       preferBoolean: false,
+      normalize: false,
     },
   ],
   create(context: TSESLint.RuleContext<'someId', Options[]>) {
@@ -57,6 +63,7 @@ module.exports = {
     }
     interface MakeFixFunctionArrayParams {
       tokens: TSESTree.Token[] | null
+      preferBoolean?: Boolean
     }
 
     type MakeFixFunctionReturnType =
@@ -69,19 +76,38 @@ module.exports = {
 
     const makeFixFunctionArray = ({
       tokens,
+      preferBoolean,
     }: MakeFixFunctionArrayParams): MakeFixFunctionArrayReturnType => {
       if (!tokens) {
         return null
       }
 
-      return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
-        return tokens.map(token => {
-          if (token.value === '!') {
-            return fixer.remove(token)
-          } else {
-            return fixer.replaceText(token, `Boolean(${token.value})`)
-          }
-        })
+      if (preferBoolean) {
+        return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
+          return tokens.map(token => {
+            if (token.value === '!') {
+              return fixer.remove(token)
+            } else {
+              return fixer.replaceText(token, `Boolean(${token.value})`)
+            }
+          })
+        }
+      } else {
+        return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
+          return tokens
+            .map(token => {
+              if (token.value === '(' || token.value === ')') {
+                return fixer.remove(token)
+              }
+              if (token.value === 'Boolean') {
+                return fixer.remove(token)
+              }
+              if (token.type === AST_TOKEN_TYPES.Identifier) {
+                return fixer.insertTextBefore(token, '!!')
+              }
+            })
+            .filter((x): x is TSESLint.RuleFix => !!x)
+        }
       }
     }
     const makeFixFunction = ({
@@ -136,34 +162,60 @@ module.exports = {
             })
           }
 
-          if (
-            options?.preferBoolean &&
-            exp.operator === '&&' &&
-            exp.left.type === AST_NODE_TYPES.UnaryExpression &&
-            sourceCode
-              .getTokens(exp)
-              .map(x => x.value)
-              .join('')
-              .startsWith('!!')
-          ) {
-            const tokens = sourceCode.getTokens(exp.left)
-            context.report({
-              node,
-              loc: {
-                start: {
-                  line: exp.left.loc.start.line,
-                  column: exp.left.loc.start.column,
+          if (options?.normalize) {
+            if (
+              options?.preferBoolean &&
+              exp.operator === '&&' &&
+              exp.left.type === AST_NODE_TYPES.UnaryExpression &&
+              sourceCode
+                .getTokens(exp)
+                .map(x => x.value)
+                .join('')
+                .startsWith('!!')
+            ) {
+              const tokens = sourceCode.getTokens(exp.left)
+              context.report({
+                node,
+                loc: {
+                  start: {
+                    line: exp.left.loc.start.line,
+                    column: exp.left.loc.start.column,
+                  },
+                  end: {
+                    line: exp.left.loc.end.line,
+                    column: exp.left.loc.end.column,
+                  },
                 },
-                end: {
-                  line: exp.left.loc.end.line,
-                  column: exp.left.loc.end.column,
+                messageId: 'someId',
+                fix: makeFixFunctionArray({
+                  tokens,
+                  preferBoolean: options?.preferBoolean,
+                }),
+              })
+            } else if (
+              exp.operator === '&&' &&
+              exp.left.type === AST_NODE_TYPES.CallExpression
+            ) {
+              const tokens = sourceCode.getTokens(exp.left)
+
+              context.report({
+                node,
+                loc: {
+                  start: {
+                    line: exp.left.loc.start.line,
+                    column: exp.left.loc.start.column,
+                  },
+                  end: {
+                    line: exp.left.loc.end.line,
+                    column: exp.left.loc.end.column,
+                  },
                 },
-              },
-              messageId: 'someId',
-              fix: makeFixFunctionArray({
-                tokens,
-              }),
-            })
+                messageId: 'someId',
+                fix: makeFixFunctionArray({
+                  tokens,
+                }),
+              })
+            }
           }
         }
       },
