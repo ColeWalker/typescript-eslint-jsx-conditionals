@@ -55,11 +55,35 @@ module.exports = {
       token: TSESTree.Token | null
       preferBoolean?: boolean
     }
+    interface MakeFixFunctionArrayParams {
+      tokens: TSESTree.Token[] | null
+    }
 
     type MakeFixFunctionReturnType =
       | ((fixer: TSESLint.RuleFixer) => TSESLint.RuleFix)
       | null
 
+    type MakeFixFunctionArrayReturnType =
+      | ((fixer: TSESLint.RuleFixer) => TSESLint.RuleFix[])
+      | null
+
+    const makeFixFunctionArray = ({
+      tokens,
+    }: MakeFixFunctionArrayParams): MakeFixFunctionArrayReturnType => {
+      if (!tokens) {
+        return null
+      }
+
+      return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
+        return tokens.map(token => {
+          if (token.value === '!') {
+            return fixer.remove(token)
+          } else {
+            return fixer.replaceText(token, `Boolean(${token.value})`)
+          }
+        })
+      }
+    }
     const makeFixFunction = ({
       token,
       preferBoolean,
@@ -108,6 +132,36 @@ module.exports = {
               fix: makeFixFunction({
                 token,
                 preferBoolean: options?.preferBoolean,
+              }),
+            })
+          }
+
+          if (
+            options?.preferBoolean &&
+            exp.operator === '&&' &&
+            exp.left.type === AST_NODE_TYPES.UnaryExpression &&
+            sourceCode
+              .getTokens(exp)
+              .map(x => x.value)
+              .join('')
+              .startsWith('!!')
+          ) {
+            const tokens = sourceCode.getTokens(exp.left)
+            context.report({
+              node,
+              loc: {
+                start: {
+                  line: exp.left.loc.start.line,
+                  column: exp.left.loc.start.column,
+                },
+                end: {
+                  line: exp.left.loc.end.line,
+                  column: exp.left.loc.end.column,
+                },
+              },
+              messageId: 'someId',
+              fix: makeFixFunctionArray({
+                tokens,
               }),
             })
           }
