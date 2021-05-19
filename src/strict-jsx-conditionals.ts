@@ -63,7 +63,8 @@ module.exports = {
     }
     interface MakeFixFunctionArrayParams {
       tokens: TSESTree.Token[] | null
-      preferBoolean?: Boolean
+      preferBoolean?: boolean
+      callExpression?: boolean
     }
 
     type MakeFixFunctionReturnType =
@@ -77,6 +78,7 @@ module.exports = {
     const makeFixFunctionArray = ({
       tokens,
       preferBoolean,
+      callExpression,
     }: MakeFixFunctionArrayParams): MakeFixFunctionArrayReturnType => {
       if (!tokens) {
         return null
@@ -84,25 +86,28 @@ module.exports = {
 
       if (preferBoolean) {
         return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
-          return tokens.map(token => {
-            if (token.value === '!') {
-              return fixer.remove(token)
-            } else {
-              return fixer.replaceText(token, `Boolean(${token.value})`)
-            }
-          })
+          const rest = tokens
+            .filter((t, i) => !(i < 2 && t.value === '!'))
+            .map(x => x.value)
+            .join('')
+          const lastToken = tokens.pop()
+          const newText = `Boolean(${rest})`
+          if (!lastToken) {
+            throw new Error('Error occurred during auto-fix')
+          }
+          return [
+            ...tokens.map(t => fixer.remove(t)),
+            fixer.replaceText(lastToken, newText),
+          ]
         }
       } else {
         return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix[] => {
           return tokens
             .map(token => {
-              if (token.value === '(' || token.value === ')') {
-                return fixer.remove(token)
-              }
-              if (token.value === 'Boolean') {
-                return fixer.remove(token)
-              }
-              if (token.type === AST_TOKEN_TYPES.Identifier) {
+              if (
+                token.type === AST_TOKEN_TYPES.Identifier &&
+                token.value !== 'Boolean'
+              ) {
                 return fixer.insertTextBefore(token, '!!')
               }
             })
@@ -141,7 +146,10 @@ module.exports = {
             )
           ) {
             const token = sourceCode.getFirstToken(exp.left)
-
+            let tokens: TSESTree.Token[] | null = null
+            if (exp.left.type === AST_NODE_TYPES.CallExpression) {
+              tokens = sourceCode.getTokens(exp.left)
+            }
             context.report({
               node,
               loc: {
@@ -155,10 +163,16 @@ module.exports = {
                 },
               },
               messageId: 'someId',
-              fix: makeFixFunction({
-                token,
-                preferBoolean: options?.preferBoolean,
-              }),
+              fix: tokens
+                ? makeFixFunctionArray({
+                    tokens,
+                    preferBoolean: options?.preferBoolean,
+                    callExpression: true,
+                  })
+                : makeFixFunction({
+                    token,
+                    preferBoolean: options?.preferBoolean,
+                  }),
             })
           }
 

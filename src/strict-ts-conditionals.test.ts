@@ -25,6 +25,9 @@ ruleTester.run('boolean-jsx-conditionals', rule as any, {
     `
  const Component = ({check}: {check: string}) => (<div>{Boolean(check.length) && <p>Check</p>}</div>)
     `,
+    `
+ const Component = ({check}: {check: ()=>boolean}) => (<div>{check() && <p>Check</p>}</div>)
+    `,
   ],
 
   invalid: [
@@ -41,6 +44,11 @@ ruleTester.run('boolean-jsx-conditionals', rule as any, {
     {
       code: `const Component = ({check}: {check: boolean | string }) => (<div>{check && <p>Check</p>}</div>)`,
       output: `const Component = ({check}: {check: boolean | string }) => (<div>{!!check && <p>Check</p>}</div>)`,
+      errors: [{ messageId: 'someId' }],
+    },
+    {
+      code: `const Component = ({check}: {check: ()=>string }) => (<div>{check() && <p>Check</p>}</div>)`,
+      output: `const Component = ({check}: {check: ()=>string }) => (<div>{!!check() && <p>Check</p>}</div>)`,
       errors: [{ messageId: 'someId' }],
     },
     {
@@ -63,8 +71,18 @@ ruleTester.run('boolean-jsx-conditionals', rule as any, {
       options: [{ preferBoolean: true }],
     },
     {
-      code: `const Component = ({check}: {check: boolean | null }) => (<div>{!!check && <p>Check</p>}</div>)`,
-      output: `const Component = ({check}: {check: boolean | null }) => (<div>{Boolean(check) && <p>Check</p>}</div>)`,
+      code: `const Component = ({check}: {check:(arg: string)=>string }) => (<div>{check('some') && <p>Check</p>}</div>)`,
+      output: `const Component = ({check}: {check:(arg: string)=>string }) => (<div>{Boolean(check('some')) && <p>Check</p>}</div>)`,
+      errors: [
+        {
+          messageId: 'someId',
+        },
+      ],
+      options: [{ preferBoolean: true }],
+    },
+    {
+      code: `const Component = ({check}: {check: boolean | null }) => (<div>{!!check() && <p>Check</p>}</div>)`,
+      output: `const Component = ({check}: {check: boolean | null }) => (<div>{Boolean(check()) && <p>Check</p>}</div>)`,
       errors: [
         {
           messageId: 'someId',
@@ -73,8 +91,8 @@ ruleTester.run('boolean-jsx-conditionals', rule as any, {
       options: [{ preferBoolean: true, normalize: true }],
     },
     {
-      code: `const Component = ({check}: {check: boolean | null }) => (<div>{Boolean(check) && <p>Check</p>}</div>)`,
-      output: `const Component = ({check}: {check: boolean | null }) => (<div>{!!check && <p>Check</p>}</div>)`,
+      code: `const Component = ({check}: {check: boolean | null }) => (<div>{Boolean(check()) && <p>Check</p>}</div>)`,
+      output: `const Component = ({check}: {check: boolean | null }) => (<div>{!!check() && <p>Check</p>}</div>)`,
       errors: [
         {
           messageId: 'someId',
