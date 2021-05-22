@@ -1,7 +1,7 @@
 {
   "name": "typescript-eslint-jsx-conditionals",
   "description": "TypeScript ESlint rule to remove unsafe conditionals in JSX.",
-  "version": "0.1",
+  "version": "1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
