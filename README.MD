@@ -2,8 +2,8 @@
 
 TypeScript ESLint rule to remove unsafe conditionals in JSX.
 
-`npm install --save-dev typescript-eslint-jsx-conditionals`
-`yarn add -D typescript-eslint-jsx-conditionals`
+`npm install --save-dev eslint-plugin-typescript-eslint-jsx-conditionals`
+`yarn add -D eslint-plugin-typescript-eslint-jsx-conditionals`
 
 ## .eslintrc.js example:
 
