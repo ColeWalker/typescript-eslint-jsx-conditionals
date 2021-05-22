@@ -17,6 +17,15 @@ ruleTester.run('boolean-jsx-conditionals', rule as any, {
  const Component = ({check}: {check: boolean}) => (<div>{check && <p>Check</p>}</div>)
     `,
     `
+ const Component = ({check}: {check: ()=>string}) => (<div>{!!check() && <p>Check</p>}</div>)
+    `,
+    `
+ const Component = ({check}: {check: (arg)=>string}) => (<div>{!!check('arg') && <p>Check</p>}</div>)
+    `,
+    `
+ const Component = ({check}: {check: (arg)=>string}) => (<div>{!!(check('arg')) && <p>Check</p>}</div>)
+    `,
+    `
  const Component = ({check}: {check: string}) => (<div>{check.length ? <p>Check</p>: <p>Check</p>}</div>)
     `,
     `
